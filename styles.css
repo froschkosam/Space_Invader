@@ -1,0 +1,21 @@
+body{
+    background-image: url("Images/space.gif");
+    margin-top: 50px;
+    margin-left: 400px; 
+}
+
+.scoreboard{
+    color: snow;
+}
+
+.board{
+    display: inline-block;
+    inline-size: 293px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.main-grid{
+    display: grid;
+    grid: repeat(9, 80px) / auto-flow 80px;
+}

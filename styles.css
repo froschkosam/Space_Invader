@@ -14,8 +14,3 @@ body{
     text-align: center;
     vertical-align: middle;
 }
-
-.main-grid{
-    display: grid;
-    grid: repeat(9, 80px) / auto-flow 80px;
-}

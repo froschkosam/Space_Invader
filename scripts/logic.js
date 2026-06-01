@@ -1,112 +1,109 @@
-function bewegen(richtung){
-    playerPos += richtung;
-    let lastPos = document.getElementById("player").className;
-    document.getElementById("player").innerHTML = "<img src='Images/clear.png' style='height: 80px; width:80px'>";
-    document.getElementById("player").className = "clear";
-    document.getElementById("player").id = lastPos;
-    initialize_player();
-}
-
-async function laser(laserPos, richtung){
+//Logik für einen Laser
+async function laser(laserPos, richtung) {
+    let end = false;
     let feld1 = true;
-    while (true){
-        laserPos = [laserPos[0]+ richtung ,laserPos[1]]
-        if (!feld1){
-            document.getElementById([laserPos[0]-richtung, laserPos[1]]).innerHTML = "<img src='Images/clear.png' style='height: 80px; width:80px'>";
-            document.getElementById([laserPos[0]-richtung, laserPos[1]]).className = "clear";
-        }
-        else {
-            feld1 = false;
-        }
-        if (document.getElementById("player").className == laserPos){
+    let fullLaserPos;
+    while (!end) {
+
+        fullLaserPos = [laserPos[0], laserPos[1] + richtung];
+
+        //Wenn Laser auf Player trift
+        if (!feld1){ 
+        if (fullLaserPos[1] == 8 && fullLaserPos[0] == fullPlayerPos) {
             lives -= 1;
             print_score();
-            if (lives == 0){
-               lose();
+            if (lives == 0) {
+                lose();
             }
-        }
-        if (document.getElementById(laserPos).className == "laser"){
-            document.getElementById(laserPos).innerHTML = "<img src='Images/clear.png' style='height: 80px; width:80px'>";
-            document.getElementById(laserPos).className = "clear";
+            end = true;
             break;
         }
+        }
+        //Wenn Laser auf Alien trift 
+        if (fullLaserPos[1] < 5 && alienPos[fullLaserPos[0]][fullLaserPos[1]] === "alien") {
+            kill(fullLaserPos);
+            end = true;
 
-        if (document.getElementById(laserPos).className == "alien"){
-            kill(laserPos);
-            break;
         }
 
-        else{
-            document.getElementById(laserPos).className = "laser";
-            if (richtung == -1){
-                document.getElementById(laserPos).innerHTML = "<img src='Images/laserP.png' style='height: 80px; width:80px'>";
-                
+        //Platziert Laser in den Laser Speicher
+        for (let i = 0; i < 80; i++) {
+
+            if (feld1) {
+                laserPos = [laserPos[0], laserPos[1] + richtung];
+                feld1 = false;
+                break;
             }
-            if (richtung == 1){
-                document.getElementById(laserPos).innerHTML = "<img src='Images/laserA.png' style='height: 80px; width:80px'>";
+
+            else {
+                laserPos = [laserPos[0], ((laserPos[1] * 80) + ((richtung / 80) * 80)) / 80];
             }
+            if (richtung == -1) {
+                laserData.push([laserP, laserPos])
+            }
+            if (richtung == 1) {
+                laserData.push([laserA, laserPos])
+            }
+            await sleep(5);
         }
-        await sleep(250);
-        
+
+        //Wenn Laser am Ende ankommt
+        if (fullLaserPos[1] < -1 || fullLaserPos[1] > 9) {
+            end = true;
+        }
     }
-
 }
 
-function kill (laserPos){
-    document.getElementById(laserPos).innerHTML = "<img src='Images/clear.png' style='height: 80px; width:80px'>";
-    document.getElementById(laserPos).className = "clear";
+
+//"Tötet" den getroffenen Alien und verteilt Punkte
+async function kill(laserPos) {
+    await sleep(500);
+    alienPos[laserPos[0]][laserPos[1]] = "clear";
     score += 100;
-    if (score % 5500 == 0 ){
+    if (score % 5500 == 0) {
         wave += 1;
-        if (shoottimer > 200){
-        shoottimer -= 50 
+        if (shoottimer > 200) {
+            shoottimer -= 50
         }
         initialize_aliens();
     }
     print_score();
 }
 
-async function enemy (){
-    
-    while (true){
-        let alienPos = getRandomInt(10);
+//lässt die Alien schießen
+async function enemy() {
+    while (spiel) {
+        let alienShoot = getRandomInt(10);
         await sleep(shoottimer);
-        if (document.getElementById([0, alienPos]).className == "alien" ){
-            for (i=1; i<6; i++){
-                if (document.getElementById([0 + i, alienPos]).className == "clear" ){
-                    laser([0 + i -1, alienPos], 1)        
+        if ( alienPos[alienShoot][0] === "alien") {
+            for (i = 0; i < 5; i++) {
+                if (alienPos[alienShoot][i] === "clear") {
+                    laser([alienShoot, i - 1], 1)
                     break;
+                }
+                if(i == 4){
+                    laser([alienShoot, i], 1)
                 }
             }
         }
     }
 }
 
-function lose() {
-    let lastPos = document.getElementById("player").className;
-    document.getElementById("player").innerHTML = "<img src='Images/clear.png' style='height: 80px; width:80px'>";
-    document.getElementById("player").className = "clear";
-    document.getElementById("player").id = lastPos;
-    let zeilen = 0;
-    for (let i=0; i < 11; i ++){
-        let spalte = 0;
-        for (let j=0; j < 9; j ++){
-            document.getElementById([spalte,zeilen]).className = "clear";
-            document.getElementById([spalte,zeilen]).innerHTML = "<img src='Images/clear.png' style='height: 80px; width:80px'>";
-            spalte ++;
-        }
-        zeilen ++;
-    document.getElementById([3,5]).innerHTML = "<h2 style='color: snow;'>GAME OVER</h2>";
-    }
-    setTimeout(() => {
-        window.location.reload();
-      }, 2500);
+// Startet das Spiel neu
+async function lose() {
+    spiel = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillText("GAME", 400, 240)
+    ctx.fillText("OVER", 400, 280)
+
+    await sleep(2500)
+    window.location.reload();
 }
 
 function sleep(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
-    }
+}
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
-      }
+}
